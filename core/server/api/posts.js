@@ -23,6 +23,7 @@ posts = {
                 omitted.posts[i].author = _.omit(omitted.posts[i].author, filteredUserAttributes);
                 omitted.posts[i].user = _.omit(omitted.posts[i].user, filteredUserAttributes);
             }
+            console.log('api.browser.done');
             return omitted;
         });
     },
@@ -37,7 +38,10 @@ posts = {
             var omitted;
 
             if (result) {
+
                 omitted = result.toJSON();
+                //console.log('result found ',omitted);
+                console.log('api.read.done');
                 omitted.author = _.omit(omitted.author, filteredUserAttributes);
                 omitted.user = _.omit(omitted.user, filteredUserAttributes);
                 return omitted;

@@ -20,6 +20,8 @@ var moment      = require('moment'),
     // Cache static post permalink regex
     staticPostPermalink = new Route(null, '/:slug/:edit?');
 
+
+    var util = require('util');
 function getPostPage(options) {
     return api.settings.read('postsPerPage').then(function (postPP) {
         var postsPerPage = parseInt(postPP.value, 10);
@@ -31,12 +33,19 @@ function getPostPage(options) {
 
         return api.posts.browse(options);
     }).then(function (page) {
-
         // A bit of a hack for situations with no content.
         if (page.pages === 0) {
             page.pages = 1;
         }
 
+        return page;
+    //
+    // CUSTOM: Added .then() to intercept data loading and
+    // map a `.projects` attribute with the static-project page
+    //
+    }).then(function(page) {
+        page.projects = api.posts.read({slug:'projects'});
+        console.log('deferred');
         return page;
     });
 }
@@ -44,6 +53,7 @@ function getPostPage(options) {
 function formatPageResponse(posts, page) {
     return {
         posts: posts,
+        projects: ((page.projects)? page.projects:''),
         pagination: {
             page: page.page,
             prev: page.prev,
@@ -83,9 +93,17 @@ frontendControllers = {
                 return res.redirect(page.pages === 1 ? config().paths.subdir + '/' : (config().paths.subdir + '/page/' + page.pages + '/'));
             }
 
+//            console.log(JSON.stringify(page.projects, null, 4));
             // Render the page of posts
             filters.doFilter('prePostsRender', page.posts).then(function (posts) {
-                res.render('index', formatPageResponse(posts, page));
+                //console.log('dump context')
+                //console.dir(page.projects);
+                //console.log(JSON.stringify(page, null, 4));
+                var check = formatPageResponse(posts, page);
+                //console.log('wtf');
+                //console.log(check);
+                console.log('rendering');
+                res.render('index', check);
             });
         }).otherwise(handleError(next));
     },
@@ -169,7 +187,7 @@ frontendControllers = {
 
             // Sanitize params we're going to use to lookup the post.
             var postLookup = _.pick(permalink.params, 'slug', 'id');
-
+            console.log(postLookup);
             // Query database to find post
             return api.posts.read(postLookup);
         }).then(function (post) {
